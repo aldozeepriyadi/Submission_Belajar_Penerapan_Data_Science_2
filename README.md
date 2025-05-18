@@ -221,19 +221,40 @@ Berikut adalah perbandingan hasil prediksi untuk berbagai model yang digunakan d
    ```
 3. **Buat model Random Forest** menggunakan `RandomForestClassifier` dari `scikit-learn`:
    ```python
-   from sklearn.ensemble import RandomForestClassifier
-   model = RandomForestClassifier(n_estimators=100, random_state=42)
-   model.fit(X_train, y_train)
+   param_grid = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'bootstrap': [True, False]
+   }
+   grid_search = GridSearchCV(estimator=RandomForestClassifier(random_state=42), param_grid=param_grid, cv=3)=
+   grid_search.fit(X_train_selected, y_train_resampled_series)
+   best_model = grid_search.best_estimator_
+   rf_predictions = best_model.predict(X_test_selected)
    ```
 4. **Evaluasi model** menggunakan data pengujian:
 
    ```python
-   from sklearn.metrics import accuracy_score, f1_score
-   y_pred = model.predict(X_test)
-   accuracy = accuracy_score(y_test, y_pred)
-   f1 = f1_score(y_test, y_pred, average='weighted')
-   print(f'Accuracy: {accuracy:.2f}')
-   print(f'F1 Score: {f1:.2f}')
+   def evaluate_model(model, y_test, predictions):
+    accuracy = accuracy_score(y_test, predictions)
+    precision = precision_score(y_test, predictions, average='macro')  # Changed to 'weighted' for multiclass
+    recall = recall_score(y_test, predictions, average='macro')  # Changed to 'weighted' for multiclass
+    f1 = f1_score(y_test, predictions, average='macro')  # Changed to 'weighted' for multiclass
+    evaluation_df = pd.DataFrame({
+        'Model': [model],
+        'Accuracy': [accuracy],
+        'Precision': [precision],
+        'Recall': [recall],
+        'F1 Score': [f1]
+    })
+    return evaluation_df
+   evaluation_df = pd.concat([
+    evaluate_model('Decision_tree', y_test, dt_predictions),
+    evaluate_model('Random Forest', y_test, rf_predictions)
+   ])
+   # Displaying the evaluation results
+   print(evaluation_df)
    ```
 
 5. **Cek fitur penting** untuk memahami faktor-faktor yang paling berpengaruh pada prediksi dropout:
@@ -246,8 +267,8 @@ Berikut adalah perbandingan hasil prediksi untuk berbagai model yang digunakan d
 6. **Simpan model dan encoder** untuk digunakan nantinya:
    ```python
    import joblib
-   joblib.dump(model, 'random_forest_model.pkl')
-   joblib.dump(scaler, 'scaler.pkl')
+   joblib.dump(pipeline, 'model_rf.pkl')
+   print("Model berhasil disimpan!")
    ```
 
 #### **Langkah 5: Buat Streamlit GUI untuk Klasifikasi Siswa**
@@ -293,7 +314,7 @@ streamlit run app.py
 #### **Deploy Aplikasi Streamlit**
 
 Aplikasi Streamlit telah di-deploy dan dapat diakses melalui tautan berikut:
-[Dropout Analytics Streamlit App](https://submissionbelajarpenerapandatascience2-aldofernandos.streamlit.app/)
+[Mahasiswa Dropout Prediction Analytics Streamlit App](https://submissionbelajarpenerapandatascience2-aldofernandos.streamlit.app/)
 
 ## **Conclusion**
 
